@@ -372,6 +372,7 @@ class TMSG():
 			try:
 				if event == "MovieDone":
 					if "movie" in payload: kwargs['movie'] = payload["movie"]
+					kwargs['with_gif'] = 1 # force gif if event is MovieDone 
 			except Exception as ex:
 				self._logger.exception("Exception on getting movie for MovieDone: " + str(ex))
 

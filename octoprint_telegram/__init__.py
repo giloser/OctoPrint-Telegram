@@ -699,7 +699,11 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 
 	def on_startup(self, host, port):
 		try:
-			self.tcmd.port =  self._settings.global_get(["server","port"])
+			if self.tcmd != None:
+				self.tcmd.port =  self._settings.global_get(["server","port"])
+			elif self.main != None and self.mail.tcmd != None:
+				self.main.tcmd.port =  self._settings.global_get(["server","port"])
+
 			#self.main.tcmd.port = port
 		except Exception as ex:
 			self._logger.error("Exception on_startup: "+ str(ex) )
@@ -1218,9 +1222,11 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 				premethod = self._settings.get(["PreImgMethod"])
 				self._logger.debug("PreImgMethod {}".format(premethod))
 				precommand = self._settings.get(["PreImgCommand"])
+				doneprecommand = False
 				if premethod == "GCODE":
 					self._logger.debug("PreImgCommand {}".format(precommand))
 					self._printer.commands(precommand)
+					doneprecommand = True
 				elif premethod == "SYSTEM":
 					self._logger.debug("PreImgCommand {}".format(precommand))
 					p = subprocess.Popen(precommand, shell=True)
@@ -1229,9 +1235,17 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 						time.sleep(0.1)
 						r = p.returncode
 						self._logger.debug("PreImg system command returned: {}".format(r))
+					doneprecommand = True
+				
+				if doneprecommand:
+					precommanddelay = self._settings.get_int(["precommand_delay"])
+					if precommanddelay > 0:
+						time.sleep(precommanddelay)
+
 		except Exception as ex:
 			self._logger.exception("Exception PreImgMethod: "+ str(ex) )
 
+		self._settings.get_int(["message_at_print_done_delay"])
 		if delay > 0:
 			time.sleep(delay)
 		try:
@@ -1271,7 +1285,7 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 			if with_gif: #giloser 05/05/19
 				try:
 					sendOneInLoop = False
-					if kwargs['event'] == "MovieDone":
+					if 'event' in kwargs and kwargs['event'] == "MovieDone":
 						ret = kwargs['movie']
 						#file = self._file_manager.path_on_disk(octoprint.filemanager.FileDestinations.LOCAL, ret)
 						file = ret
@@ -1376,34 +1390,37 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 								self._logger.debug("multicam_profiles : "+ str(curr))
 								for li in curr:
 									try:
-										self._logger.debug("multicam profile:  "+ str(li))
-										snapshot_url = li.get("URL")
-										self._logger.debug("multicam url :  "+ str(snapshot_url))
+										self._logger.debug("multicam profile:  " + str(li))
+										snapshot_url = li.get("snapshot")
+										self._logger.debug("multicam snapshot :  " + str(snapshot_url))
+										if(snapshot_url == "" or snapshot_url == "http://" or snapshot_url == "https://" or snapshot_url == None):
+											snapshot_url = li.get("URL")
+											self._logger.debug("multicam url :  " + str(snapshot_url))
 
-										defsnap = self._settings.global_get(["webcam", "snapshot"])
-										defstream = self._settings.global_get(["webcam", "stream"])
-										streamname = defstream.rsplit('/', 1).pop()
-										snapname = defsnap.rsplit('/', 1).pop()
-										if streamname in snapshot_url:
-											self._logger.debug( str(streamname) + " found so should be replaced by " + str(snapname) )
-											snapshot_url = snapshot_url.replace(streamname,snapname)
+											defsnap = self._settings.global_get(["webcam", "snapshot"])
+											defstream = self._settings.global_get(["webcam", "stream"])
+											streamname = defstream.rsplit("/", 1).pop()
+											snapname = defsnap.rsplit("/", 1).pop()
+											if streamname in snapshot_url and streamname != snapshot_url:
+												self._logger.debug(str(streamname) + " found so should be replaced by " + str(snapname))
+												snapshot_url = snapshot_url.replace( streamname, snapname)
 
-										self._logger.debug("Snapshot URL: " + str(snapshot_url))
+										self._logger.debug( "Snapshot URL: " + str(snapshot_url) )
 										if snapshot_url != self._settings.global_get(["webcam", "snapshot"]):
 											image_data2 = self.take_image(snapshot_url)
 											if str(image_data2) != "":
 												self._logger.debug("Image for  " + str(li.get("name")))
-												files = {'photo':("image.jpg", image_data2)}
+												files = {"photo": ("image.jpg", image_data2)}
 												data2 = data
-												data2['caption'] = ""
-												r = requests.post(self.bot_url + "/sendPhoto", files=files, data=data2, proxies=self.getProxies())
+												data2["caption"] = ""
+												r = requests.post(self.bot_url + "/sendPhoto",files=files,data=data2,proxies=self.getProxies())
 											else:
 												self._logger.debug("no image  " + str(li.get("name")))
 										else:
-											self._logger.debug("url is the same as the one from octoprint " )
+											self._logger.debug("url is the same as the one from octoprint ")
 
 									except Exception as ex:
-										self._logger.exception("Exception loop multicam URL to create image: "+ str(ex) )
+										self._logger.exception("Exception loop multicam URL to create image: "+ str(ex))
 							except Exception as ex:
 								self._logger.exception("Exception occured on getting multicam options: "+ str(ex) )
 					except Exception as ex:
@@ -1491,6 +1508,11 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 
 		try:
 			if with_image or with_gif:
+				#delay
+				postcommanddelay = self._settings.get_int(["postcommand_delay"])
+				if postcommanddelay > 0:
+					time.sleep(postcommanddelay)
+				
 				##find a way to decide if should and what command to light on
 				postmethod = self._settings.get(["PostImgMethod"])
 				self._logger.debug("PostImgMethod {}".format(postmethod))
@@ -1506,6 +1528,7 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 						time.sleep(0.1)
 						r = p.returncode
 						self._logger.debug("PostImg system command returned: {}".format(r))
+				
 		except Exception as ex:
 			self._logger.exception("Exception PostImgMethod: "+ str(ex) )
 
