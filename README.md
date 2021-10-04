@@ -6,7 +6,7 @@
 This plugin integrates Telegram Messenger with Octoprint. It sends messages (with photos if available) on print start, end and failure. Also it sends messages during the print at configurable intervals. That way you don't have to remember to regularly have a look at the printing process.
 Also, you can control Octoprint via messages (settings, start a print and much more). Send `/status` to get the current printer status or `/abort` to abort the current print. Send `/help` for a list of all recognized commands. You may also use this bot in groups.
 
-**Latest release: [1.6.5](https://github.com/fabianonline/OctoPrint-Telegram/releases)**
+**Latest release: [1.6.6](https://github.com/fabianonline/OctoPrint-Telegram/releases)**
 
 <!-- omit in toc -->
 ## Contents
@@ -78,7 +78,7 @@ If you already have a bot, you only need your bot token to proceed. GOTO `4.` (o
 	supergif - send a gif of 10 seconds 
 	on - Turns on the printer power via the PSUControl plugin API. Requires PSU Control plugin installation.
 	off - Turns off the printer power via the PSUControl plugin API. Requires PSU Control plugin.
-	gcode_XXX - Send the gcode to the printer where XXX is the gcode command (/gcode_M117 HelloWorld for exemple)
+	gcode - Send the gcode to the printer where XXX is the gcode command (/gcode_M117 HelloWorld for exemple)
 	```
 	<img src="https://raw.githubusercontent.com/fabianonline/OctoPrint-Telegram/screenshots/bot_optional.png" alt="Optional bot settings" width="60%" align="center"/> <br><br><br>
 	
