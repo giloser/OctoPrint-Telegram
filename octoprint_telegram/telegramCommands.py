@@ -623,18 +623,23 @@ class TCMD():
 				self.main.send_msg(self.gEmo('warning') + " Command failed with exception: %s!" % ex,chatID = chat_id)
 
 			self.main.send_msg(self.gEmo('question') + gettext(" Turn on the Printer?\n\n") , responses=[[[self.main.emojis['check']+gettext(" Yes"),"SwitchOn"], [self.main.emojis['cross mark']+gettext(" No"),"No"]]],chatID=chat_id)
-		elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True) :
+		elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True) or self.main._plugin_manager.get_plugin("tasmota",True) :
 			if self.main._plugin_manager.get_plugin("tasmota_mqtt",True):
 				plugpluginname = "tasmota_mqtt"
 			elif self.main._plugin_manager.get_plugin("tplinksmartplug",True):
 				plugpluginname = "tplinksmartplug"
 			elif self.main._plugin_manager.get_plugin("tuyasmartplug",True):
 				plugpluginname = "tuyasmartplug"
+			elif self.main._plugin_manager.get_plugin("tasmota",True):
+				plugpluginname = "tasmota"
 			if parameter and parameter != "back" and parameter != "No":
 				try:    #Let's check if the printer has been turned on before.
 					params = parameter.split('_')
 					pluglabel = params[0]
 					if plugpluginname == "tasmota_mqtt":
+						relayN = params[1]
+						CurrentStatus = params[2]
+					elif plugpluginname == "tasmota":
 						relayN = params[1]
 						CurrentStatus = params[2]
 					else:
@@ -655,6 +660,8 @@ class TCMD():
 						data = '{ "command":"turnOn","label":"'+pluglabel+'" }'
 					elif plugpluginname == "tasmota_mqtt":
 						data = '{ "command":"turnOn","topic":"'+pluglabel+'","relayN": "'+ relayN +'" }'
+					elif plugpluginname == "tasmota":
+						data = '{ "command":"turnOn","ip":"'+pluglabel+'","idx": "'+ relayN +'" }'
 					elif plugpluginname == "tplinksmartplug":
 						data = '{ "command":"turnOn","ip":"'+pluglabel+'" }'
 					answer = requests.post("http://localhost:" + str(self.port) + "/api/plugin/"+plugpluginname,  headers=headers,data=data)
@@ -677,6 +684,9 @@ class TCMD():
 					elif plugpluginname == "tasmota_mqtt":
 						data = '{ "command":"getListPlug"}'
 						optionname = "arrRelays"
+					elif plugpluginname == "tasmota":
+						data = '{ "command":"getListPlug"}'
+						optionname = "arrSmartplugs"
 					elif plugpluginname == "tplinksmartplug":
 						data = '{ "command":"getListPlug"}'
 						optionname = "arrSmartplugs"
@@ -688,6 +698,7 @@ class TCMD():
 						#will try to get the list of plug from config 
 						try:
 							curr = self.main._settings.global_get(["plugins",plugpluginname,optionname])
+							self._logger.debug("get settings from global: %s" % str(curr))
 							if curr != None:
 								json_data = curr
 							else:
@@ -715,6 +726,10 @@ class TCMD():
 									tmpKeys.append([str(label['topic'])+ "_" + str(label['relayN']),"/on_" + str(label['topic'])+ "_" + str(label['relayN']) + "_"+ str(label['currentstate'])])
 									if firstplug == "":
 										firstplug = str(label['topic'])+ "_" + str(label['relayN'])
+								elif plugpluginname == "tasmota":
+									tmpKeys.append([str(label['ip'])+ "_" + str(label['idx']),"/on_" + str(label['ip'])+ "_" + str(label['idx']) + "_"+ str(label['currentState'])])
+									if firstplug == "":
+										firstplug = str(label['ip'])+ "_" + str(label['idx'])
 								elif plugpluginname == "tplinksmartplug":
 									tmpKeys.append([str(label['label']),"/on_" + str(label['ip'])+"_"+ str(label['currentState'])])
 									if firstplug == "":
@@ -754,9 +769,11 @@ class TCMD():
 				self.main.send_msg(self.gEmo('warning') + " Command failed with exception: %s!" % ex, chatID = chat_id)
 
 			self.main.send_msg(self.gEmo('question') + gettext(" Turn off the Printer?\n\n") , responses=[[[self.main.emojis['check']+gettext(" Yes"),"SwitchOff"], [self.main.emojis['cross mark']+gettext(" No"),"No"]]],chatID=chat_id)
-		elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True) :
+		elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True) or self.main._plugin_manager.get_plugin("tasmota",True) :
 			if self.main._plugin_manager.get_plugin("tasmota_mqtt",True):
 				plugpluginname = "tasmota_mqtt"
+			elif self.main._plugin_manager.get_plugin("tasmota",True):
+				plugpluginname = "tasmota"
 			elif self.main._plugin_manager.get_plugin("tplinksmartplug",True):
 				plugpluginname = "tplinksmartplug"
 			elif self.main._plugin_manager.get_plugin("tuyasmartplug",True):
@@ -766,6 +783,9 @@ class TCMD():
 					params = parameter.split('_')
 					pluglabel = params[0]
 					if plugpluginname == "tasmota_mqtt":
+						relayN = params[1]
+						CurrentStatus = params[2]
+					if plugpluginname == "tasmota":
 						relayN = params[1]
 						CurrentStatus = params[2]
 					else:
@@ -786,6 +806,8 @@ class TCMD():
 						data = '{ "command":"turnOff","label":"'+pluglabel+'" }'
 					elif plugpluginname == "tasmota_mqtt":
 						data = '{ "command":"turnOff","topic":"'+pluglabel+'" ,"relayN": "'+ relayN +'"}'
+					elif plugpluginname == "tasmota":
+						data = '{ "command":"turnOff","ip":"'+pluglabel+'" ,"idx": "'+ relayN +'"}'
 					elif plugpluginname == "tplinksmartplug" :
 						data = '{ "command":"turnOff","ip":"'+pluglabel+'" }'
 					answer =requests.post("http://localhost:" + str(self.port) + '/api/plugin/'+plugpluginname, headers=headers, data=data)
@@ -808,6 +830,9 @@ class TCMD():
 					elif plugpluginname == "tasmota_mqtt":
 						data = '{ "command":"getListPlug"}'
 						optionname = "arrRelays"
+					elif plugpluginname == "tasmota":
+						data = '{ "command":"getListPlug"}'
+						optionname = "arrSmartplugs"
 					elif plugpluginname == "tplinksmartplug":
 						data = '{ "command":"getListPlug"}'
 						optionname = "arrSmartplugs"
@@ -819,6 +844,7 @@ class TCMD():
 						#will try to get the list of plug from config 
 						try:
 							curr = self.main._settings.global_get(["plugins",plugpluginname,optionname])
+							self._logger.debug("get settings from global: %s" % str(curr))
 							if curr != None:
 								json_data = curr
 							else:
@@ -846,6 +872,10 @@ class TCMD():
 									tmpKeys.append([str(label['topic'])+"_" + str(label['relayN']),"/off_" + str(label['topic'])+ "_" + str(label['relayN']) + "_"+ str(label['currentstate'])])
 									if firstplug == "":
 										firstplug = str(label['topic'])+"_" + str(label['relayN'])
+								elif plugpluginname == "tasmota":
+									tmpKeys.append([str(label['ip'])+"_" + str(label['idx']),"/off_" + str(label['ip'])+ "_" + str(label['idx']) + "_"+ str(label['currentState'])])
+									if firstplug == "":
+										firstplug = str(label['ip'])+"_" + str(label['idx'])
 								elif plugpluginname == "tplinksmartplug":
 									tmpKeys.append([str(label['label']),"/off_" + str(label['ip'])+"_"+ str(label['currentState'])])
 									if firstplug == "":
@@ -875,9 +905,11 @@ class TCMD():
 				headers = {'Content-Type': 'application/json', 'X-Api-Key' : self.main._settings.global_get(['api','key'])}
 				answer = requests.post("http://localhost:" + str(self.port) + "/api/plugin/psucontrol", json={ 'command':'turnPSUOff' }, headers=headers)
 				
-			elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True) :
+			elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True) or self.main._plugin_manager.get_plugin("tasmota",True)  :
 				if self.main._plugin_manager.get_plugin("tasmota_mqtt",True):
 					plugpluginname = "tasmota_mqtt"
+				elif self.main._plugin_manager.get_plugin("tasmota",True):
+					plugpluginname = "tasmota"
 				elif self.main._plugin_manager.get_plugin("tplinksmartplug",True):
 					plugpluginname = "tplinksmartplug"
 				elif self.main._plugin_manager.get_plugin("tuyasmartplug",True):
@@ -891,6 +923,9 @@ class TCMD():
 						elif plugpluginname == "tasmota_mqtt":
 							relayN = params[1]
 							data = '{ "command":"turnOff","topic":"'+pluglabel+'","relayN":"'+relayN+'"}'
+						elif plugpluginname == "tasmota":
+							relayN = params[1]
+							data = '{ "command":"turnOff","ip":"'+pluglabel+'","idx":"'+relayN+'"}'
 						elif plugpluginname == "tplinksmartplug":
 							data = '{ "command":"turnOff","ip":"'+pluglabel+'"  }'
 						headers = {'Content-Type': 'application/json', 'X-Api-Key' : self.main._settings.global_get(['api','key'])}
@@ -918,9 +953,11 @@ class TCMD():
 			if self.main._plugin_manager.get_plugin("psucontrol",True):
 				headers = {'Content-Type': 'application/json', 'X-Api-Key' : self.main._settings.global_get(['api','key'])}
 				answer = requests.post("http://localhost:" + str(self.port) + "/api/plugin/psucontrol", json={ 'command':'turnPSUOn' }, headers=headers)
-			elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True) :
+			elif self.main._plugin_manager.get_plugin("tuyasmartplug",True) or self.main._plugin_manager.get_plugin("tasmota_mqtt",True) or self.main._plugin_manager.get_plugin("tplinksmartplug",True)  or self.main._plugin_manager.get_plugin("tasmota",True) :
 				if self.main._plugin_manager.get_plugin("tasmota_mqtt",True):
 					plugpluginname = "tasmota_mqtt"
+				elif self.main._plugin_manager.get_plugin("tasmota",True):
+					plugpluginname = "tasmota"
 				elif self.main._plugin_manager.get_plugin("tplinksmartplug",True):
 					plugpluginname = "tplinksmartplug"
 				elif self.main._plugin_manager.get_plugin("tuyasmartplug",True):
@@ -934,6 +971,9 @@ class TCMD():
 						elif plugpluginname == "tasmota_mqtt":
 							relayN = params[1]
 							data = '{ "command":"turnOn","topic":"'+pluglabel+'","relayN":"'+relayN+'"}'
+						elif plugpluginname == "tasmota":
+							relayN = params[1]
+							data = '{ "command":"turnOn","ip":"'+pluglabel+'","idx":"'+relayN+'"}'
 						elif plugpluginname == "tplinksmartplug":
 							data = '{ "command":"turnOn","ip":"'+pluglabel+'"  }'
 						self._logger.debug("Call POST API octoprint): url {} with data {}".format(str("http://localhost:" + str(self.port) + '/api/plugin/'+plugpluginname),str(data)))
@@ -945,7 +985,7 @@ class TCMD():
 						self.main.send_msg(self.gEmo('warning') + " Command failed with exception: %s!" % ex, chatID = chat_id, msg_id = self.main.getUpdateMsgId(chat_id))
 				else:
 					self._logger.debug("should had parameters but not")
-					self.main.send_msg(self.gEmo('warning') + "Something wrong, shutdown failed.",chatID=chat_id, msg_id = self.main.getUpdateMsgId(chat_id))
+					self.main.send_msg(self.gEmo('warning') + "Something wrong, Power on failed.",chatID=chat_id, msg_id = self.main.getUpdateMsgId(chat_id))
 					return
 			
 			if (answer.status_code >= 300):
