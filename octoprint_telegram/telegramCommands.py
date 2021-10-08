@@ -727,7 +727,7 @@ class TCMD():
 									if firstplug == "":
 										firstplug = str(label['topic'])+ "_" + str(label['relayN'])
 								elif plugpluginname == "tasmota":
-									tmpKeys.append([str(label['ip'])+ "_" + str(label['idx']),"/on_" + str(label['ip'])+ "_" + str(label['idx']) + "_"+ str(label['currentState'])])
+									tmpKeys.append([str(label['label']),"/on_" + str(label['ip'])+ "_" + str(label['idx']) + "_"+ str(label['currentState'])])
 									if firstplug == "":
 										firstplug = str(label['ip'])+ "_" + str(label['idx'])
 								elif plugpluginname == "tplinksmartplug":
@@ -873,7 +873,7 @@ class TCMD():
 									if firstplug == "":
 										firstplug = str(label['topic'])+"_" + str(label['relayN'])
 								elif plugpluginname == "tasmota":
-									tmpKeys.append([str(label['ip'])+"_" + str(label['idx']),"/off_" + str(label['ip'])+ "_" + str(label['idx']) + "_"+ str(label['currentState'])])
+									tmpKeys.append([str(label['label']),"/off_" + str(label['ip'])+ "_" + str(label['idx']) + "_"+ str(label['currentState'])])
 									if firstplug == "":
 										firstplug = str(label['ip'])+"_" + str(label['idx'])
 								elif plugpluginname == "tplinksmartplug":
