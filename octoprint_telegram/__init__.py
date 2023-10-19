@@ -1239,9 +1239,8 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 				
 				if doneprecommand:
 					precommanddelay = self._settings.get_int(["precommand_delay"])
-					if precommanddelay != None:
-						if precommanddelay > 0:
-							time.sleep(precommanddelay)
+					if precommanddelay > 0:
+						time.sleep(precommanddelay)
 
 		except Exception as ex:
 			self._logger.exception("Exception PreImgMethod: "+ str(ex) )
@@ -1354,39 +1353,37 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 				self._logger.debug("data so far: " + str(data))
 
 				if with_image:
-					
 					try:
-						files={}
-						sendOneInLoop = False
-						first_webcam_name =""
-						if self.get_settings_version
-						try:
-						webcam = self.get_webcam_configurations()
-						self._logger.debug("multicam_profiles : "+ str(webcam))
-						for li in webcam:
-							try:
-								self._logger.debug("new webcam profile:  " + str(li))
-								webcam_name = li.get("name")
-								self._logger.debug("new webcam name :  " + str(webcam_name))
-								if first_webcam_name == "":
-									first_webcam_name = webcam_name
-									image_data = self.take_webcam_snapshot(webcam_name)
-								else:
-									image_data2 = self.take_webcam_snapshot(webcam_name)
-									if str(image_data2) != "":
-										self._logger.debug("Image for  " + str(webcam_name))
-										files = {"photo": ("image.jpg", image_data2)}
-										data2 = data
-										data2["caption"] = ""
-										r = requests.post(self.bot_url + "/sendPhoto",files=files,data=data2,proxies=self.getProxies())
-									else:
-										self._logger.debug("no image  " + str(li.get("name")))		
-							except Exception as ex:
-								self._logger.info("Caught an exception trying get new webcam info: " + str(ex))
 						image_data = self.take_image(self._settings.global_get(["webcam", "snapshot"]))
 					except Exception as ex:
 						self._logger.info("Caught an exception trying take image: " + str(ex))
 
+					try:
+						printable_image_data = None
+						if image_data != None: #giloser check before using
+					 		if is_in_python_2():
+					 			printable_image_data = image_data.decode('utf8', errors='ignore')
+					 		else:
+					 			printable_image_data = str(image_data)
+					 	#self._logger.debug("image data so far: {}".format(printable_image_data))
+					except Exception as ex:
+					 	self._logger.info("Caught an exception trying to create printable_image_data: " + str(ex))
+
+					try:
+						if not image_data or image_data == None or 'html' in printable_image_data:
+							image_data = None
+							message = u'[ERR GET IMAGE]\n\n ' + ''.join(message)#.decode('utf-8', errors='ignore'))
+					except Exception as ex:
+					 	self._logger.info("Caught an exception trying to add info that we don't have image: " + str(ex))
+
+					try:
+						self._logger.debug(u"message so far: {}".format(message))#.decode('utf-8', errors='ignore')))
+					except Exception as ex:
+					 	self._logger.info("Caught an exception trying to debug message so far: " + str(ex))
+
+					try:
+						files={}
+						sendOneInLoop = False
 						if self._plugin_manager.get_plugin("multicam",True) and self._settings.get(["multicam"]):
 							try:
 								curr = self._settings.global_get(["plugins","multicam","multicam_profiles"])
@@ -1428,29 +1425,6 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 								self._logger.exception("Exception occured on getting multicam options: "+ str(ex) )
 					except Exception as ex:
 						self._logger.exception("Exception occured on getting multicam plugin: "+ str(ex) )
-
-				try:
-					printable_image_data = None
-					if image_data != None: #giloser check before using
-						if is_in_python_2():
-							printable_image_data = image_data.decode('utf8', errors='ignore')
-						else:
-							printable_image_data = str(image_data)
-					#self._logger.debug("image data so far: {}".format(printable_image_data))
-				except Exception as ex:
-					self._logger.info("Caught an exception trying to create printable_image_data: " + str(ex))
-
-				try:
-					if not image_data or image_data == None or 'html' in printable_image_data:
-						image_data = None
-						message = u'[ERR GET IMAGE]\n\n ' + ''.join(message)#.decode('utf-8', errors='ignore'))
-				except Exception as ex:
-					self._logger.info("Caught an exception trying to add info that we don't have image: " + str(ex))
-
-				try:
-					self._logger.debug(u"message so far: {}".format(message))#.decode('utf-8', errors='ignore')))
-				except Exception as ex:
-					self._logger.info("Caught an exception trying to debug message so far: " + str(ex))
 
 				r = None
 
@@ -1536,9 +1510,8 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 			if with_image or with_gif:
 				#delay
 				postcommanddelay = self._settings.get_int(["postcommand_delay"])
-				if postcommanddelay != None:
-					if postcommanddelay > 0:
-						time.sleep(postcommanddelay)
+				if postcommanddelay > 0:
+					time.sleep(postcommanddelay)
 				
 				##find a way to decide if should and what command to light on
 				postmethod = self._settings.get(["PostImgMethod"])
