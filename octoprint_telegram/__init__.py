@@ -1239,8 +1239,9 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 				
 				if doneprecommand:
 					precommanddelay = self._settings.get_int(["precommand_delay"])
-					if precommanddelay > 0:
-						time.sleep(precommanddelay)
+					if precommanddelay != None:
+						if precommanddelay > 0:
+							time.sleep(precommanddelay)
 
 		except Exception as ex:
 			self._logger.exception("Exception PreImgMethod: "+ str(ex) )
@@ -1510,8 +1511,9 @@ class TelegramPlugin(octoprint.plugin.EventHandlerPlugin,
 			if with_image or with_gif:
 				#delay
 				postcommanddelay = self._settings.get_int(["postcommand_delay"])
-				if postcommanddelay > 0:
-					time.sleep(postcommanddelay)
+				if postcommanddelay != None:
+					if postcommanddelay > 0:
+						time.sleep(postcommanddelay)
 				
 				##find a way to decide if should and what command to light on
 				postmethod = self._settings.get(["PostImgMethod"])
